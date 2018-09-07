@@ -2,130 +2,545 @@ swagger: '2.0'
 info:
   description: RESTful API for the Denner Translations
   version: 1.0.0
-  title: Denner Translations Web Service
+  # Caution: For development imports in API Gateway use your personal name acronym as version, i.e. "denner-translations-api-iw"
+  title: denner-translations-api
   contact:
     name: DETAIL NET
     email: support+denner-translations-api@detailnet.ch
-host: denner-translations-api-v1.detailnet.ch
+host: denner-translations-api.detailnet.ch
+basePath: /v1
+x-detail-stage-variables:
+  prod:
+  - lambda_env: 'prod'
+  - lambda_alias: 'live'
+  - bucket: 'denner-assets'
+  test:
+  - lambda_env: 'test'
+  - lambda_alias: 'live'
+  - bucket: 'denner-assets-test'
 schemes:
-  - https
-consumes:
-  - application/json
-produces:
-  - application/json
+- https
 securityDefinitions:
-  appId:
-    type: apiKey
-    description: Application identifier
-    name: App-ID
-    in: header
-  appKey:
+  AppKeyHeader:
     type: apiKey
     description: Application key
     name: App-Key
     in: header
+    x-amazon-apigateway-authtype: "custom"
+    x-amazon-apigateway-authorizer:
+      authorizerCredentials: "arn:aws:iam::802555642192:role/aws-apigateway-role.denner-translations-api"
+      authorizerUri: "arn:aws:apigateway:eu-west-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-1:802555642192:function:denner-lambda-tools_authorizeApiRequest/invocations"
+      authorizerResultTtlInSeconds: 300
+      type: "token"
+
 paths:
-  ### @todo: ONLY initial stubs, has to be continued
+  ### @todo: This is taken from the AWS API Export
+  ###        Need to refactor:
+  ###          - strings, remove unneeded "
+  ###          - write and use object refs for request parameters
+  ###          - request responses as separate schema objects
+  ###          - models
+  ###          - embed example data
+  ###        Take the swagger definition of denner-print-api-spec as reference
   /exports:
     post:
-      summary: Export open translation jobs
-      description: >
-        Use this operation to generate the file of translations for a specific language.
-      operationId: exportTranslations
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
       responses:
         200:
-          description: File url
-
+          description: "200 response"
+          schema:
+            $ref: "#/definitions/Empty"
+          headers:
+            Access-Control-Allow-Origin:
+              type: "string"
+      x-amazon-apigateway-integration:
+        uri: "arn:aws:apigateway:eu-west-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-1:802555642192:function:denner-translations-api-${stageVariables.lambda_env}_exportTranslations:${stageVariables.lambda_alias}/invocations"
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        requestTemplates:
+          application/json: "#set($bodyParams = $util.parseJson($input.json('$')))\n\
+            {\n  \"query\": \"f.status=__streq_open&f.source_language=__streq_de#if($bodyParams.language.length)&f.translated_language=__streq_$util.escapeJavaScript($bodyParams.language)#end\"\
+            \n}"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws"
+    options:
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      responses:
+        200:
+          description: "200 response"
+          schema:
+            $ref: "#/definitions/Empty"
+          headers:
+            Access-Control-Allow-Origin:
+              type: "string"
+            Access-Control-Allow-Methods:
+              type: "string"
+            Access-Control-Allow-Headers:
+              type: "string"
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,App-Key,X-Requested-With'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        requestTemplates:
+          application/json: "{\"statusCode\": 200}"
+        passthroughBehavior: "when_no_match"
+        type: "mock"
   /imports:
     post:
-      summary: Import translated translation jobs
-      description: >
-        Use this operation to integrate the translations for a specific language.
-      operationId: importTranslations
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
       responses:
         200:
-          description: Import report
-
+          description: "200 response"
+          schema:
+            $ref: "#/definitions/Empty"
+          headers:
+            Access-Control-Allow-Origin:
+              type: "string"
+      x-amazon-apigateway-integration:
+        uri: "arn:aws:apigateway:eu-west-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-1:802555642192:function:denner-translations-api-${stageVariables.lambda_env}_importTranslations:${stageVariables.lambda_alias}/invocations"
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        requestTemplates:
+          application/json: "{\n    \"url\" : \"$util.escapeJavaScript($util.parseJson($input.json('$')).get('url'))\"\
+            \n}"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws"
+    options:
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      responses:
+        200:
+          description: "200 response"
+          schema:
+            $ref: "#/definitions/Empty"
+          headers:
+            Access-Control-Allow-Origin:
+              type: "string"
+            Access-Control-Allow-Methods:
+              type: "string"
+            Access-Control-Allow-Headers:
+              type: "string"
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,App-Key,X-Requested-With'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        requestTemplates:
+          application/json: "{\"statusCode\": 200}"
+        passthroughBehavior: "when_no_match"
+        type: "mock"
   /items/{item_type}/{item_id}/jobs:
     get:
-      summary: List translation jobs for a specific item
-      operationId: listJobs
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "App-Key"
+        in: "header"
+        required: false
+        type: "string"
+      - name: "sort"
+        in: "query"
+        required: false
+        type: "string"
+      - name: "f.status"
+        in: "query"
+        required: false
+        type: "string"
+      - name: "item_id"
+        in: "path"
+        required: true
+        type: "string"
+      - name: "item_type"
+        in: "path"
+        required: true
+        type: "string"
+      - name: "f.source_language"
+        in: "query"
+        required: false
+        type: "string"
       responses:
         200:
-          description: List of translations for the item
-
+          description: "200 response"
+          schema:
+            $ref: "#/definitions/Empty"
+          headers:
+            Access-Control-Allow-Origin:
+              type: "string"
+      security:
+      - AppKeyHeader: []
+      x-amazon-apigateway-integration:
+        uri: "arn:aws:apigateway:eu-west-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-1:802555642192:function:denner-translations-api-${stageVariables.lambda_env}_listJobs:${stageVariables.lambda_alias}/invocations"
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        requestTemplates:
+          application/json: "#set($queryParams = $input.params().querystring)\r\n\
+            #set($pathParams = $input.params().get('path'))\r\n{\r\n  \"query\": \"\
+            f.item.type=__streq_$util.escapeJavaScript($pathParams.get('item_type'))&f.item.id=__streq_$util.escapeJavaScript($pathParams.get('item_id'))#if($queryParams.size()\
+            \ != 0)&#foreach($paramName in $queryParams.keySet())$paramName=$util.escapeJavaScript($queryParams.get($paramName))#if($foreach.hasNext)&#end#end#end\"\
+            \r\n}\r\n"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws"
+    options:
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      responses:
+        200:
+          description: "200 response"
+          schema:
+            $ref: "#/definitions/Empty"
+          headers:
+            Access-Control-Allow-Origin:
+              type: "string"
+            Access-Control-Allow-Methods:
+              type: "string"
+            Access-Control-Allow-Headers:
+              type: "string"
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,App-Key,X-Requested-With'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        requestTemplates:
+          application/json: "{\"statusCode\": 200}"
+        passthroughBehavior: "when_no_match"
+        type: "mock"
   /jobs:
     get:
-      summary: List translation jobs
-      operationId: listJobs
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "App-Key"
+        in: "header"
+        required: false
+        type: "string"
+      - name: "sort"
+        in: "query"
+        required: false
+        type: "string"
+      - name: "page_size"
+        in: "query"
+        required: false
+        type: "string"
+      - name: "f.status"
+        in: "query"
+        required: false
+        type: "string"
+      - name: "page"
+        in: "query"
+        required: false
+        type: "string"
+      - name: "f.item.type"
+        in: "query"
+        required: false
+        type: "string"
+      - name: "f.item.id"
+        in: "query"
+        required: false
+        type: "string"
+      - name: "f.source_language"
+        in: "query"
+        required: false
+        type: "string"
       responses:
         200:
-          description: List translations
+          description: "200 response"
+          schema:
+            $ref: "#/definitions/Empty"
+          headers:
+            Access-Control-Allow-Origin:
+              type: "string"
+      security:
+      - AppKeyHeader: []
+      x-amazon-apigateway-integration:
+        uri: "arn:aws:apigateway:eu-west-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-1:802555642192:function:denner-translations-api-${stageVariables.lambda_env}_listJobs:${stageVariables.lambda_alias}/invocations"
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            responseTemplates:
+              application/json: "#set($response = $input.path('$'))\n{\n    \"jobs\"\
+                : $response.jobs,\n    \"total_jobs\": $response.total_jobs,\n   \
+                \ \"total_items\": $response.total_jobs\n}\n"
+        requestTemplates:
+          application/json: "#set($queryParams = $input.params().querystring)\r\n\
+            {\r\n  \"query\": \"#foreach($paramName in $queryParams.keySet())$paramName=$util.escapeJavaScript($queryParams.get($paramName))#if($foreach.hasNext)&#end#end\"\
+            \r\n}"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        cacheNamespace: "ldl8z0"
+        cacheKeyParameters:
+        - "method.request.querystring.f.item.id"
+        - "method.request.querystring.f.item.type"
+        - "method.request.querystring.f.source_language"
+        - "method.request.querystring.f.status"
+        - "method.request.querystring.page"
+        - "method.request.querystring.page_size"
+        - "method.request.querystring.sort"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws"
     post:
-      summary: New translation job
-      operationId: saveJob
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "App-Key"
+        in: "header"
+        required: false
+        type: "string"
+      responses:
+        201:
+          description: "201 response"
+          schema:
+            $ref: "#/definitions/Empty"
+          headers:
+            Access-Control-Allow-Origin:
+              type: "string"
+        422:
+          description: "422 response"
+          schema:
+            $ref: "#/definitions/Error"
+          headers:
+            Access-Control-Allow-Origin:
+              type: "string"
+      security:
+      - AppKeyHeader: []
+      x-amazon-apigateway-integration:
+        uri: "arn:aws:apigateway:eu-west-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-1:802555642192:function:denner-translations-api-${stageVariables.lambda_env}_saveJob:${stageVariables.lambda_alias}/invocations"
+        responses:
+          default:
+            statusCode: "201"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+          Job validation failed:
+            statusCode: "422"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            responseTemplates:
+              application/json: "#set($inputRoot = $input.path('$'))\n{\n  \"message\"\
+                : \"Validation error\"\n}"
+        requestTemplates:
+          application/json: "{\r\n  \"job_data\": $input.json('$')\r\n}"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        cacheNamespace: "ldl8z0"
+        cacheKeyParameters:
+        - "method.request.header.App-Key"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws"
+    options:
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
       responses:
         200:
-          description: Translation job
-
+          description: "200 response"
+          schema:
+            $ref: "#/definitions/Empty"
+          headers:
+            Access-Control-Allow-Origin:
+              type: "string"
+            Access-Control-Allow-Methods:
+              type: "string"
+            Access-Control-Allow-Headers:
+              type: "string"
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Methods: "'POST,GET,OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,App-Key,X-Requested-With'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        requestTemplates:
+          application/json: "{\"statusCode\": 200}"
+        passthroughBehavior: "when_no_match"
+        type: "mock"
   /jobs/{job_id}:
     delete:
-      summary: Delete translation job
-      operationId: deleteJob
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "job_id"
+        in: "path"
+        required: true
+        type: "string"
+      - name: "App-Key"
+        in: "header"
+        required: false
+        type: "string"
       responses:
         200:
-          description: Empty response
+          description: "200 response"
+          schema:
+            $ref: "#/definitions/Empty"
+          headers:
+            Access-Control-Allow-Origin:
+              type: "string"
+      security:
+      - AppKeyHeader: []
+      x-amazon-apigateway-integration:
+        uri: "arn:aws:apigateway:eu-west-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-1:802555642192:function:denner-translations-api-${stageVariables.lambda_env}_deleteJob:${stageVariables.lambda_alias}/invocations"
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        requestTemplates:
+          application/json: "{\r\n  \"job_id\": \"$input.params().path.get('job_id')\"\
+            \r\n}"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws"
+    options:
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      responses:
+        200:
+          description: "200 response"
+          schema:
+            $ref: "#/definitions/Empty"
+          headers:
+            Access-Control-Allow-Origin:
+              type: "string"
+            Access-Control-Allow-Methods:
+              type: "string"
+            Access-Control-Allow-Headers:
+              type: "string"
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Methods: "'DELETE,OPTIONS,PATCH'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,App-Key,X-Requested-With'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        requestTemplates:
+          application/json: "{\"statusCode\": 200}"
+        passthroughBehavior: "when_no_match"
+        type: "mock"
     patch:
-      summary: Update translation job
-      operationId: saveJob
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "job_id"
+        in: "path"
+        required: true
+        type: "string"
+      - name: "App-Key"
+        in: "header"
+        required: false
+        type: "string"
       responses:
         200:
-          description: Translation job
-
-
-parameters:
-  PageParam:
-    name: page
-    description: >
-      The page number.
-      Default: 1
-    in: query
-    type: integer
-    required: false
-    format: int32
-    minimum: 0
-    default: 1
-  PageSizeUnlimitableParam:
-    name: page_size
-    description: >
-      The page size that might be unlimited.
-      Default: -1 (no limit)
-    in: query
-    type: integer
-    required: false
-    format: int32
-    default: -1
-  PageSizeParam:
-    name: page_size
-    description: >
-      The page size.
-      Default: 10
-    in: query
-    type: integer
-    required: false
-    format: int32
-    minimum: 1
-    maximum: 100
-    default: 10
-  SortParam:
-    name: sort
-    description: >
-      Sort the results, e.g. "sort=name__desc" will sort by name (Z to A)
-    in: query
-    type: string
-    required: false
+          description: "200 response"
+          schema:
+            $ref: "#/definitions/Empty"
+          headers:
+            Access-Control-Allow-Origin:
+              type: "string"
+        422:
+          description: "422 response"
+          schema:
+            $ref: "#/definitions/Error"
+          headers:
+            Access-Control-Allow-Origin:
+              type: "string"
+      security:
+      - AppKeyHeader: []
+      x-amazon-apigateway-integration:
+        uri: "arn:aws:apigateway:eu-west-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-1:802555642192:function:denner-translations-api-${stageVariables.lambda_env}_saveJob:${stageVariables.lambda_alias}/invocations"
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+          .*[Vv]alidation failed:
+            statusCode: "422"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            responseTemplates:
+              application/json: "#set($inputRoot = $input.path('$'))\n{\n  \"message\"\
+                : \"Validation error\"\n}"
+        requestTemplates:
+          application/json: "{\r\n  \"job_id\": \"$input.params().path.get('job_id')\"\
+            ,\r\n  \"job_data\": $input.json('$')\r\n}"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        cacheNamespace: "0jllao"
+        cacheKeyParameters:
+        - "method.request.path.job_id"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws"
 
 definitions:
+  ### Defaults
+  Empty:
+    type: "object"
+    title: "Empty Schema"
+  Error:
+    type: "object"
+    properties:
+      type:
+        type: "string"
+      title:
+        type: "string"
+      status:
+        type: "integer"
+      detail:
+        type: "string"
+    title: "Error Schema"
   ### Common
   UUIDv4:
     type: string
