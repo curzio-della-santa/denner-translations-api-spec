@@ -14,8 +14,8 @@ The Denner Translations Web Service provides data and functions for translation 
 ### Jobs
 
 * `GET /items/{item_type}/{item_id}/jobs` ([example](examples/translation-jobs.json))
-* `GET /jobs` (Print-Werbemittel, [example](examples/translation-job-items.json))
-* `POST /jobs` (Print-Werbemittel, [example](examples/translation-job.post.json))
+* `GET /jobs` ([example](examples/translation-job-items.json))
+* `POST /jobs` ([example](examples/translation-job.post.json))
 * `DELETE /jobs/{id}`
 * `PATCH /jobs/{id}`
 
