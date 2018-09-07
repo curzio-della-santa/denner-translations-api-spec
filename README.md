@@ -1,60 +1,23 @@
-# Denner Portal 2.0 API Spec
-
-## Terms and translations
-Consider the following terms:
-
-| DE          | EN          |
-|-------------|-------------|
-| Filiale     | Store       |
-| Artikel     | Article     |
-| Werbemittel | Publication |
-| Aktion      | Promotion   |
-| bewerben    | advertise   |
+# Denner Translations API Spec
 
 ## Data and resources
-The Denner Portal provides mostly advertising related data.
+The Denner Translations Web Service provides data and functions for translation collaboration.
 
-### Stores
+### Export
 
-* `/stores` (Filialen, [example](examples/stores.json))
-* `/store-channels` (Filialkanäle, [example](examples/store-channels.json))
-* `/store-services` (Filialangebote, [example](examples/store-services.json))
-* `/screen-stores` (Screen-Filialen, [example](examples/screen-stores.json))
+* `POST /exports` 
 
-### Articles/Promotions
+### Import
 
-* `/article-groups` (Warengruppen, [example](examples/article-groups.json))
-* `/articles` (Artikel, [example](examples/articles.json))
-* `/shop-wines` (Wineshop-Weine)
-* `/mobile-wines` (Mobile-App-Weine)
-* `/online-groups` (Internet-Sortimente, [example](examples/online-groups.json))
-* `/online-specials` (Online-Specials, [example](examples/online-specials.json))
-* `/advertised-articles` (beworbene Artikel)
-* `/promotion-types` (Aktionstypen, [example](examples/promotion-types.json))
+* `POST /imports`
 
-### Advertising
+### Jobs
 
-#### Online
-* `/online-publications` (Online-Werbemittel, [example](examples/online-publications.json))
-* `/online-filters` (Angebotsfilter, [example](examples/online-filters.json))
-
-#### Screen
-* `/screen-publications` (Screen-Werbemittel, [example](examples/screen-publications.json))
-
-#### Print
-* `/print-publications` (Print-Werbemittel, [example](examples/print-publications.json))
-* `/print-publications/{publication_id]` (Print-Werbemittel, [example](examples/print-publication.json))
-* `/print-layouts` (Print-Layoutarten, [example](examples/print-layouts.json))
-* `/print-formats` (Print-Formate und -Vorlagen, [example](examples/print-formats.json))
-* `/print-schemes` (Print-Werbemittelschemas, [example](examples/print-schemes.json))
-
-### Appraisals
-* `/appraisals` (Weinbeurteilungen, [example](examples/appraisals.json))
-* `/appraisals/{appraisal_id}` (Weinbeurteilung, [example](examples/appraisal.json))
-* `/appraisal-statistic/{date}` (Statistiken zu Weinbewertungen und -beurteilungen, [example](examples/appraisal-statistic.json))
-* `/ratings` (Weinbewertungen, [example](examples/ratings.json))
-* `/ratings/{article_id}` (Weinbewertung, [example](examples/rating.json))
-* `/sweepstake-participants` (Verlosungsteilnehmer, [example](examples/sweepstake-participants.json))
+* `GET /items/{item_type}/{item_id}/jobs` ([example](examples/translation-jobs.json))
+* `GET /jobs` (Print-Werbemittel, [example](examples/translation-job-items.json))
+* `POST /jobs` (Print-Werbemittel, [example](examples/translation-job.post.json))
+* `DELETE /jobs/{id}`
+* `PATCH /jobs/{id}`
 
 ## Building
 
@@ -78,9 +41,9 @@ You should also install the JSON processor utility for further data manipulation
 Once installed, `swagger.json` can be generated as follows:
 
         java -jar modules/swagger-codegen-cli/target/swagger-codegen-cli.jar generate \
-            -i ../denner-portal-api-spec/src/swagger.yml \
+            -i ../denner-translations-api-spec/src/swagger.yml \
             -l swagger \
-            -o ../denner-portal-api-spec/build/swagger
+            -o ../denner-translations-api-spec/build/swagger
         
 The file will be located at `build/swagger/swagger.json`.
 
@@ -103,13 +66,13 @@ To filter out examples and descriptions execute following (JSON processor needed
           }
           
           dropRecursive(this, 'this');
-        ' < ../denner-portal-api-spec/build/swagger/swagger.json > ../denner-portal-api-spec/build/swagger/swagger.no_texts.json
+        ' < ../denner-translations-api-spec/build/swagger/swagger.json > ../denner-translations-api-spec/build/swagger/swagger.no_texts.json
 
 The file will be located at `build/swagger/swagger.no_texts.json`.
 
 To compress all your JSON data execute following (JSON processor needed):
 
-        for f in `ls ../denner-portal-api-spec/build/swagger/*.json | grep -v "compressed"`
+        for f in `ls ../denner-translations-api-spec/build/swagger/*.json | grep -v "compressed"`
         do 
           json -o json-0 < $f > "${f%.json}.compressed.json"
         done
@@ -118,8 +81,8 @@ To compress all your JSON data execute following (JSON processor needed):
 You can also generate a static HTML page:
 
         java -jar modules/swagger-codegen-cli/target/swagger-codegen-cli.jar generate \
-            -i ../denner-portal-api-spec/src/swagger.yml \
+            -i ../denner-translations-api-spec/src/swagger.yml \
             -l html \
-            -o ../denner-portal-api-spec/build/html
+            -o ../denner-translations-api-spec/build/html
             
 The file will be located at `build/html/index.html`.
